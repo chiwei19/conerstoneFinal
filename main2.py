@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import pickle
 from picamera2 import Picamera2
-from picamera2.array import PiRGBArray
+import time
 
 # Load camera calibration data
 with open("calib.pckl", "rb") as f:
@@ -14,20 +14,18 @@ with open("calib.pckl", "rb") as f:
 picam2 = Picamera2()
 config = picam2.create_preview_configuration(main={"size": (640, 480)})  # Adjust size as needed
 picam2.configure(config)
-
-# Create an array to store the frame
-rawCapture = PiRGBArray(picam2)
+picam2.start()
 
 # Set up ArUco dictionary and detector parameters
 dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_7X7_100)
 dt = cv2.aruco.DetectorParameters_create()
 
-# Allow the camera to warm up
-time.sleep(0.1)
+while True:
+    # Capture a frame
+    frame = picam2.capture()
 
-for frame in picam2.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-    # Get the raw NumPy array representing the image
-    frame = frame.array
+    # Convert the frame to BGR format
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
     # Detect markers
     corners, ids, _ = cv2.aruco.detectMarkers(frame, dict, parameters=dt)
@@ -60,9 +58,6 @@ for frame in picam2.capture_continuous(rawCapture, format="bgr", use_video_port=
 
     # Show the frame
     cv2.imshow("Frame", frame)
-
-    # Clear the stream in preparation for the next frame
-    rawCapture.truncate(0)
 
     # Break the loop on 'q' key press
     if cv2.waitKey(1) & 0xFF == ord('q'):
