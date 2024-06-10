@@ -2,40 +2,65 @@ import cv2
 import numpy as np
 import pickle
 
-class ArucoDistanceCalculator:
-    def __init__(self, calibration_file="calib.pckl", marker_size=0.05):
-        with open(calibration_file, "rb") as f:
-            data = pickle.load(f)
-            self.cMat = data[0]
-            self.dcoeff = data[1]
-        self.marker_size = marker_size
-        self.dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_7X7_100)
-        self.dt = cv2.aruco.DetectorParameters_create()
-    
-    def calculate_distance(self, frame):
-        corners, ids, _ = cv2.aruco.detectMarkers(frame, self.dict, parameters=self.dt)
-        if ids is not None and ids.size > 0:
-            corner = corners[0][0]
-            rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corners[0], self.marker_size, self.cMat, self.dcoeff)
-            dist = np.linalg.norm(tvec)*100
-            return dist
-        else:
-            return None
 
-    def run(self):
-        cap = cv2.VideoCapture(0)
-        while True:
-            ret, frame = cap.read()
-            dist = self.calculate_distance(frame)
-            if dist is not None:
-                cv2.putText(frame, f"Distance: {dist:.2f} cm", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-            cv2.imshow("Frame", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        cap.release()
-        cv2.destroyAllWindows()
+#from servo import ServoMotor
+from angle import horizontal_angle,verticle_angle
 
-# Example usage
-if __name__ == "__main__":
-    distance_calculator = ArucoDistanceCalculator()
-    distance_calculator.run()
+# Load camera calibration data
+with open("calib.pckl", "rb") as f:
+    data = pickle.load(f)
+    cMat = data[0]
+    dcoeff = data[1]
+
+# Initialize the video capture
+cap = cv2.VideoCapture(0)
+
+# Set up ArUco dictionary and detector parameters
+dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_7X7_100)
+dt = cv2.aruco.DetectorParameters_create()
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Detect markers
+    corners, ids, _ = cv2.aruco.detectMarkers(frame, dict, parameters=dt)
+
+    if ids is not None and ids.size > 0:
+        id = ids[0][0]
+        corner = corners[0][0]
+        
+        # Estimate pose of the marker
+        rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corners[0], 0.05, cMat, dcoeff)
+        dist = np.linalg.norm(tvec) * 100
+        
+        # Draw detected markers and coordinates
+        cv2.aruco.drawDetectedMarkers(frame, corners)
+        
+        # Get and display the coordinates of the square
+        coord_vec = []
+        for i in range(len(corner)):
+            coord = (int(corner[i][0]), int(corner[i][1]))
+            coord_vec.append(coord)
+            #print(int(corner[i][0]), int(corner[i][1]))
+            cv2.putText(frame, f"({coord[0]}, {coord[1]})", coord, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        print(coord_vec)
+        hor_angle = horizontal_angle(coord_vec, dist)
+        ver_angle = verticle_angle(dist)
+
+        # Display the distance to the marker
+        cv2.putText(frame, f"Distance: {dist:.2f} cm", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+        cv2.putText(frame, f"hor: {hor_angle:.2f}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+        cv2.putText(frame, f"ver: {ver_angle:.2f}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+
+    # Show the frame
+    cv2.imshow("Frame", frame)
+
+    # Break the loop on 'q' key press
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the video capture and close windows
+cap.release()
+cv2.destroyAllWindows()
