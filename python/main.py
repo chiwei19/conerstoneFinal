@@ -17,7 +17,7 @@ with open("calib.pckl", "rb") as f:
 # Initialize the video capture
 cap = cv2.VideoCapture(0)
 
-port = 'COM3'
+port = 'COM11'
 bluetooth_sender = BluetoothSender(port)
 
 # Set up ArUco dictionary and detector parameters

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import pickle
 import math
-from Bt import BluetoothSender
+
 
 
 #from servo import ServoMotor
