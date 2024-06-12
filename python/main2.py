@@ -68,7 +68,8 @@ while True:
         bt.write(angle)
         
         
-    # Show the frame
+        
+# Show the frame
     cv2.imshow("Frame", frame)
 
     # Break the loop on 'q' key press
