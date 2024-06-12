@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import pickle
 import math
+from BT_Demo import bluetooth
 
 
 
@@ -17,6 +18,11 @@ with open("calib.pckl", "rb") as f:
 # Initialize the video capture
 cap = cv2.VideoCapture(0)
 
+# Initializa BT
+bt = bluetooth("   ")
+while not bt.is_open():
+  pass
+print("BT Connected!")
 
 
 # Set up ArUco dictionary and detector parameters
@@ -57,10 +63,11 @@ while True:
         cv2.putText(frame, f"Distance: {dist:.2f} cm", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
         cv2.putText(frame, f"hor: {hor_angle:.2f}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
         cv2.putText(frame, f"ver: {ver_angle:.2f}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+        # Send angle
+        angle = 1000 * round(hor_angle) + ver_angle
+        bt.write(angle)
         
         
-        
-
     # Show the frame
     cv2.imshow("Frame", frame)
 

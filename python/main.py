@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import pickle
 import math
-from Bt import BluetoothSender
+from BT_Demo import bluetooth
 
 
 #from servo import ServoMotor
@@ -17,8 +17,13 @@ with open("calib.pckl", "rb") as f:
 # Initialize the video capture
 cap = cv2.VideoCapture(0)
 
-port = 'COM11'
-bluetooth_sender = BluetoothSender(port)
+# Initializa BT
+bt = bluetooth("   ")
+while not bt.is_open():
+  pass
+print("BT Connected!")
+        
+
 
 # Set up ArUco dictionary and detector parameters
 dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_7X7_100)
@@ -61,7 +66,7 @@ while True:
         
         # Send angle
         angle = 1000 * round(hor_angle) + ver_angle
-        BluetoothSender.send(angle)
+        bt.write(angle)
         
 
     # Show the frame
