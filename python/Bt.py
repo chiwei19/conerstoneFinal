@@ -1,29 +1,58 @@
-import serial
+import logging
+from time import sleep
 
-class BluetoothSender:
-    def __init__(self, port, baudrate=9600):
-        
-        self.port = port
-        self.baudrate = baudrate
-        self.ser = serial.Serial(self.port, self.baudrate)
-    
-    def send(self, number):
-        
-        data_to_send = str(number).encode()
-        self.ser.write(data_to_send)
-        print(f"Sent number: {number}")
-    
-    def close(self):
-        
-        self.ser.close()
+from serial import Serial
+from serial.serialutil import SerialException
 
-# Example usage
-if __name__ == "__main__":
-    port = 'COM3'  # Replace with your actual COM port
-    bluetooth_sender = BluetoothSender(port)
-    
-    try:
-        number = input("Enter a number to send: ")
-        bluetooth_sender.send(number)
-    finally:
-        bluetooth_sender.close()
+log = logging.getLogger(__name__)
+
+# these codes are for bluetooth
+# hint: please check the function "sleep". how does it work?
+
+
+class Bluetooth:
+    """
+    The Bluetooth class is used to connect to the Arduino via Bluetooth.
+    """
+
+    def __init__(self):
+        self.serial = Serial()
+
+    def do_connect(self, port: str):
+        self.serial.close()
+        log.info(f"Connecting to {port}...")
+        try:
+            self.serial = Serial(port, 9600, timeout=2)
+            log.info("Success\n")
+        except SerialException:
+            log.warning("Fail to connect\n")
+            return False
+        return True
+
+    def disconnect(self):
+        self.serial.close()
+
+    def serial_write_string(self, data: str):
+        send = data.encode("utf-8")
+        self.serial.write(send)
+
+    def serial_write_bytes(self, data: bytes):
+        self.serial.write(data)
+
+    def serial_read_string(self):
+        waiting = self.serial.in_waiting
+        if waiting >= 0:
+            rv = self.serial.readline().decode("utf-8")[:-1]
+            return rv
+        return ""
+
+    def serial_read_byte(self):
+        sleep(0.05) #manually setting delay for output
+        waiting = self.serial.in_waiting
+        rv = self.serial.read(waiting)
+        if rv:
+            uid = hex(int.from_bytes(rv, byteorder="big", signed=False))
+            self.serial.reset_input_buffer()
+            return uid
+        else:
+            return 0
