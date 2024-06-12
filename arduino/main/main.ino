@@ -7,14 +7,10 @@ void setup() {
   pinMode(3,OUTPUT);
   servo1.attach(4);  // 設定要將伺服馬達接到哪一個PIN腳
   servo2.attach(5);  // 設定要將伺服馬達接到哪一個PIN腳
-  // bluetooth initialization
-  Serial1.begin(9600);
-  // Serial window
-  Serial.begin(9600);
 }
 
 void loop() { 
-  angle = ask_BT();
+  angle = 
   int hor, ver;
   hor = angle / 1000;
   ver = angle % 1000;
